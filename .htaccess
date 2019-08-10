@@ -1,0 +1,85 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php/$1 [L]
+
+# Permitir principais navegadores
+RewriteCond %{HTTP_USER_AGENT} !^.*AOL.*       [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Mozilla.*   [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Opera.*     [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Msie.*      [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Firefox.*   [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Netscape.*  [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Safari.*    [NC]
+
+# Permitir que os principais mecanismos de pesquisa
+RewriteCond %{HTTP_USER_AGENT} !^.*Google.*    [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Slurp.*     [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Yahoo.*     [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*MMCrawler.* [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*msnbot.*    [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*SandCrawl.* [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*MSRBOT.*    [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Teoma.*     [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*Jeeves.*    [NC]
+RewriteCond %{HTTP_USER_AGENT} !^.*inktomi.*   [NC]
+
+# Permitir agentes de usuário diversos
+RewriteCond %{HTTP_USER_AGENT} !^.*libwww.*    [NC]
+RewriteRule .* - [F]
+
+# Bloqueie qualquer script que tente dados base64_encode dentro do URL.
+RewriteCond %{QUERY_STRING} base64_encode[^(]*\([^)]*\) [OR]
+# Bloquear qualquer script que inclua uma tag <script> na URL.
+RewriteCond %{QUERY_STRING} (<|%3C)([^s]*s)+cript.*(>|%3E) [NC,OR]
+# Bloquear qualquer script tentando definir uma variável PHP GLOBALS via URL.
+RewriteCond %{QUERY_STRING} GLOBALS(=|\[|\%[0-9A-Z]{0,2}) [OR]
+# Bloquear qualquer script tentando modificar uma variável _REQUEST via URL.
+RewriteCond %{QUERY_STRING} _REQUEST(=|\[|\%[0-9A-Z]{0,2})
+# Retornar 403 Cabeçalho proibido e mostrar o conteúdo da home page raiz
+RewriteRule .* index.php [F]
+
+# Evitar hotlink
+RewriteCond %{HTTP_REFERER} !^$
+RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?http://localhost:8080 [NC]
+RewriteRule \.(jpg|jpeg|png|gif)$ - [NC,F,L]
+
+# Bloqueia conexões via proxy
+RewriteCond %{HTTP:VIA}%{HTTP:FORWARDED}%{HTTP:USERAGENT_VIA}%{HTTP:X_FORWARDED_FOR}%{HTTP:PROXY_CONNECTION} !^$ 
+
+# Não exibir diretorio git
+RedirectMatch 404 /\.git
+
+# Tempo maximo de execução
+php_value max_input_time 60
+
+<IfModule mod_headers.c>
+	#Força o IE a sempre carregar utilizando a última versão disponível
+	Header set X-UA-Compatible "IE=Edge,chrome=1"
+	<FilesMatch "\.(js|css|gif|png|jpeg|pdf|xml|oga|ogg|m4a|ogv|mp4|m4v|webm|svg|svgz|eot|ttf|otf|woff|ico|webp|appcache|manifest|htc|crx|oex|xpi|safariextz|vcf)$" >
+		Header unset X-UA-Compatible
+	</FilesMatch>
+	<filesMatch ".(jpg|jpeg|png|gif|ico)$">
+		Header set Cache-Control "max-age=2628000, public"
+	</filesMatch>
+
+	# Cabeçalhos de segurança
+	#Header Set Access-Control-Allow-Origin "https://vestibular.grupouniversidadebrasil.com.br"
+	Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+	Header set Content-Security-Policy "default-src 'self';"
+	Header set X-Permitted-Cross-Domain-Policies "none"
+	Header set Referrer-Policy "no-referrer"
+	Header always append X-Frame-Options DENY
+	#Header always append X-Frame-Options SAMEORIGIN
+	Header set X-XSS-Protection "1; mode=block"
+	Header set X-Content-Type-Options nosniff
+</IfModule>
+
+# Bloqueia a listagem de diretórios.
+Options All -Indexes
+
+# remove assinatura do servidor
+ServerSignature Off
+
+# seta timezone
+SetEnv TZ America/Sao_Paulo
